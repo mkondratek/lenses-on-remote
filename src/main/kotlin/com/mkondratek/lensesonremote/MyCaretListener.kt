@@ -9,7 +9,7 @@ class MyCaretListener(val project: Project) : CaretListener {
   override fun caretPositionChanged(e: CaretEvent) {
     val offset = e.caret!!.offset
     val lineNumber = e.editor.document.getLineNumber(offset)
-    val url = FileDocumentManager.getInstance().getFile(e.editor.document)!!.url
+    val url = FileDocumentManager.getInstance().getFile(e.editor.document)?.url ?: return
     LensesService.mock_codeLenses_display(project, lineNumber, url)
   }
 }
