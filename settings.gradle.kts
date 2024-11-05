@@ -1,1 +1,1 @@
-rootProject.name = "Lenses On Remote"
+rootProject.name = "LensesOnRemote"
