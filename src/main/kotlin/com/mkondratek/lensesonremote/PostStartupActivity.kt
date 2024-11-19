@@ -11,6 +11,6 @@ class PostStartupActivity : ProjectActivity {
   override suspend fun execute(project: Project) {
     val multicaster = EditorFactory.getInstance().eventMulticaster as EditorEventMulticasterEx
     val disposable = Disposer.newDisposable()
-    multicaster.addCaretListener(MyCaretListener(project), disposable)
+    multicaster.addCaretListener(MyCaretListener(), disposable)
   }
 }
