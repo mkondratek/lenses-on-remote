@@ -2,7 +2,6 @@ package com.mkondratek.lensesonremote.providers
 
 import com.intellij.codeInsight.codeVision.CodeVisionAnchorKind
 import com.intellij.codeInsight.codeVision.CodeVisionProvider
-import com.intellij.codeInsight.codeVision.CodeVisionRelativeOrdering
 import com.intellij.codeInsight.codeVision.CodeVisionState
 import com.intellij.codeInsight.codeVision.CodeVisionState.Companion.READY_EMPTY
 import com.intellij.codeInsight.codeVision.ui.model.ClickableRichTextCodeVisionEntry
@@ -18,32 +17,30 @@ import com.mkondratek.lensesonremote.protocol.ProtocolCommand
 import java.awt.event.MouseEvent
 
 abstract class EditCodeVisionProviderMetadata {
-  abstract val ordering: CodeVisionRelativeOrdering
-  abstract val command: String
-  open val textColor: JBColor = JBColor.BLACK
+  abstract val id: String
+  abstract val myActionId: String
 
-  val id: String
-    get() = "EditCodeVisionProvider-${command}"
-
-  fun showAfter(providerCompanion: EditCodeVisionProviderMetadata): CodeVisionRelativeOrdering {
-    return CodeVisionRelativeOrdering.CodeVisionRelativeOrderingAfter(providerCompanion.id)
+  companion object {
+    fun deriveId(command: String) = "EditCodeVisionProvider-${command}"
   }
 }
 
-abstract class EditCodeVisionProvider(private val metadata: EditCodeVisionProviderMetadata) :
+abstract class EditCodeVisionProvider(metadata: EditCodeVisionProviderMetadata) :
     CodeVisionProvider<Unit>, DumbAware {
-  override val id: String = metadata.id
+
+  open val textColor: JBColor = JBColor.BLACK
+  private val command: String = metadata.myActionId
+
+  override val id = metadata.id
   override val groupId: String = "EditCodeVisionProvider"
   override val name: String = "My Edit Lenses"
   override val defaultAnchor: CodeVisionAnchorKind = CodeVisionAnchorKind.Top
-  override val relativeOrderings: List<CodeVisionRelativeOrdering> = listOf(metadata.ordering)
 
   override fun precomputeOnUiThread(editor: Editor) {}
 
   private fun getActionRichText(cmd: ProtocolCommand): RichText {
     return RichText().also {
-      it.append(
-          cmd.title.text, SimpleTextAttributes(SimpleTextAttributes.STYLE_BOLD, metadata.textColor))
+      it.append(cmd.title.text, SimpleTextAttributes(SimpleTextAttributes.STYLE_BOLD, textColor))
       it.append("   |", SimpleTextAttributes(SimpleTextAttributes.STYLE_PLAIN, JBColor.GRAY))
     }
   }
@@ -55,7 +52,7 @@ abstract class EditCodeVisionProvider(private val metadata: EditCodeVisionProvid
       val codeVisionEntries =
           LensesService.getInstance(project).getLenses(editor).mapNotNull { codeLens ->
             val cmd = codeLens.command
-            if (cmd == null || cmd.command != metadata.command) null
+            if (cmd == null || cmd.command != command) null
             else {
               val richText = getActionRichText(cmd)
               val textRange = MyEditorUtil.getTextRange(editor.document, codeLens.range)
@@ -72,12 +69,11 @@ abstract class EditCodeVisionProvider(private val metadata: EditCodeVisionProvid
   }
 
   companion object {
-    fun allEditProviders(): List<EditCodeVisionProviderMetadata> {
-      return listOf(
-          EditAcceptCodeVisionProvider,
-          EditDiffCodeVisionProvider,
-          EditRetryCodeVisionProvider,
-          EditUndoCodeVisionProvider)
-    }
+    fun allEditProviders() =
+        listOf(
+            EditAcceptCodeVisionProvider.Metadata,
+            EditDiffCodeVisionProvider.Metadata,
+            EditRetryCodeVisionProvider.Metadata,
+            EditUndoCodeVisionProvider.Metadata)
   }
 }

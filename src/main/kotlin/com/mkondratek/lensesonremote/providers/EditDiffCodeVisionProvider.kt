@@ -2,9 +2,12 @@ package com.mkondratek.lensesonremote.providers
 
 import com.intellij.codeInsight.codeVision.CodeVisionRelativeOrdering
 
-class EditDiffCodeVisionProvider : EditCodeVisionProvider(EditDiffCodeVisionProvider) {
-  companion object : EditCodeVisionProviderMetadata() {
-    override val ordering: CodeVisionRelativeOrdering = showAfter(EditUndoCodeVisionProvider)
-    override val command: String = "my_action.fixup.codelens.diff"
+class EditDiffCodeVisionProvider : EditCodeVisionProvider(Metadata) {
+
+  override val relativeOrderings = listOf(CodeVisionRelativeOrdering.CodeVisionRelativeOrderingLast)
+
+  object Metadata : EditCodeVisionProviderMetadata() {
+    override val myActionId = "my_action.fixup.codelens.diff"
+    override val id: String = deriveId(myActionId)
   }
 }

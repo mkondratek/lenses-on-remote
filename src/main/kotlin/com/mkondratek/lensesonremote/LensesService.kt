@@ -46,33 +46,37 @@ class LensesService(val project: Project) {
     }
 
     fun mock_codeLenses_display(project: Project, line: Int, url: String) {
-      val codeLenses =
-          arrayListOf(
-              ProtocolCodeLens(
-                  Range(Position(line, 0), Position(line, 0)),
-                  ProtocolCommand(
-                      TitleParams(" Accept"),
-                      "my_action.fixup.codelens.accept",
-                  )),
-              ProtocolCodeLens(
-                  Range(Position(line, 0), Position(line, 0)),
-                  ProtocolCommand(
-                      TitleParams("Edit & Retry"),
-                      "my_action.fixup.codelens.retry",
-                  )),
-              ProtocolCodeLens(
-                  Range(Position(line, 0), Position(line, 0)),
-                  ProtocolCommand(
-                      TitleParams("Reject"),
-                      "my_action.fixup.codelens.undo",
-                  )),
-              ProtocolCodeLens(
-                  Range(Position(line, 0), Position(line, 0)),
-                  ProtocolCommand(
-                      TitleParams("Show Diff"),
-                      "my_action.fixup.codelens.diff",
-                  )))
+      val codeLenses = aListOfLensesForLine(line)
+
       getInstance(project).updateLenses(url, codeLenses)
+    }
+
+    private fun aListOfLensesForLine(line: Int): List<ProtocolCodeLens> {
+      return arrayListOf(
+          ProtocolCodeLens(
+              Range(Position(line, 0), Position(line, 0)),
+              ProtocolCommand(
+                  TitleParams(" Accept"),
+                  "my_action.fixup.codelens.accept",
+              )),
+          ProtocolCodeLens(
+              Range(Position(line, 0), Position(line, 0)),
+              ProtocolCommand(
+                  TitleParams("Edit & Retry"),
+                  "my_action.fixup.codelens.retry",
+              )),
+          ProtocolCodeLens(
+              Range(Position(line, 0), Position(line, 0)),
+              ProtocolCommand(
+                  TitleParams("Reject"),
+                  "my_action.fixup.codelens.undo",
+              )),
+          ProtocolCodeLens(
+              Range(Position(line, 0), Position(line, 0)),
+              ProtocolCommand(
+                  TitleParams("Show Diff"),
+                  "my_action.fixup.codelens.diff",
+              )))
     }
   }
 }
