@@ -16,11 +16,17 @@ import com.mkondratek.lensesonremote.providers.EditCodeVisionProvider
 
 @Service(Service.Level.PROJECT)
 class LensesService(val project: Project) {
-  private var lensGroups = mutableMapOf<VirtualFile, List<ProtocolCodeLens>>()
+  private var lensGroups = mutableMapOf<VirtualFile, ProtocolCodeLens>()
 
-  fun updateLenses(uriString: String, codeLens: List<ProtocolCodeLens>) {
+  fun updateLenses(uriString: String, line: Int) {
     val vf = MyEditorUtil.findFileOrScratch(project, uriString) ?: return
-    lensGroups[vf] = codeLens
+    lensGroups[vf] =
+        ProtocolCodeLens(
+            Range(Position(line, 0), Position(line, 0)),
+            ProtocolCommand(
+                TitleParams(" Accept"),
+                "my_action.fixup.codelens.accept",
+            ))
 
     if (project.isDisposed) return
     MyEditorUtil.getSelectedEditors(project).forEach { editor ->
@@ -34,47 +40,12 @@ class LensesService(val project: Project) {
 
   fun getLenses(editor: Editor): List<ProtocolCodeLens> {
     val vf = editor.virtualFile
-
     return lensGroups[vf] ?: emptyList()
   }
 
   companion object {
     fun getInstance(project: Project): LensesService {
       return project.service<LensesService>()
-    }
-
-    fun mock_codeLenses_display(project: Project, line: Int, url: String) {
-      val codeLenses = aListOfLensesForLine(line)
-
-      getInstance(project).updateLenses(url, codeLenses)
-    }
-
-    private fun aListOfLensesForLine(line: Int): List<ProtocolCodeLens> {
-      return arrayListOf(
-          ProtocolCodeLens(
-              Range(Position(line, 0), Position(line, 0)),
-              ProtocolCommand(
-                  TitleParams(" Accept"),
-                  "my_action.fixup.codelens.accept",
-              )),
-          ProtocolCodeLens(
-              Range(Position(line, 0), Position(line, 0)),
-              ProtocolCommand(
-                  TitleParams("Edit & Retry"),
-                  "my_action.fixup.codelens.retry",
-              )),
-          ProtocolCodeLens(
-              Range(Position(line, 0), Position(line, 0)),
-              ProtocolCommand(
-                  TitleParams("Reject"),
-                  "my_action.fixup.codelens.undo",
-              )),
-          ProtocolCodeLens(
-              Range(Position(line, 0), Position(line, 0)),
-              ProtocolCommand(
-                  TitleParams("Show Diff"),
-                  "my_action.fixup.codelens.diff",
-              )))
     }
   }
 }

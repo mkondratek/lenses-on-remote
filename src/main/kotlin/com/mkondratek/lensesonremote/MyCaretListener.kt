@@ -10,6 +10,6 @@ class MyCaretListener : CaretListener {
     val lineNumber = e.editor.document.getLineNumber(offset)
     val url = FileDocumentManager.getInstance().getFile(e.editor.document)?.url ?: return
     val project = e.editor.project ?: return
-    LensesService.mock_codeLenses_display(project, lineNumber, url)
+    LensesService.getInstance(project).updateLenses(url, lineNumber)
   }
 }
