@@ -48,32 +48,21 @@ abstract class EditCodeVisionProvider(metadata: EditCodeVisionProviderMetadata) 
   override fun computeCodeVision(editor: Editor, uiData: Unit): CodeVisionState {
     return runReadAction {
       val project = editor.project ?: return@runReadAction READY_EMPTY
+      val codeLens =
+          LensesService.getInstance(project).getLenses(editor) ?: return@runReadAction READY_EMPTY
 
-      val codeVisionEntries =
-          LensesService.getInstance(project).getLenses(editor).mapNotNull { codeLens ->
-            val cmd = codeLens.command
-            if (cmd == null || cmd.command != command) null
-            else {
-              val richText = getActionRichText(cmd)
-              val textRange = MyEditorUtil.getTextRange(editor.document, codeLens.range)
-              val onClick = { _: MouseEvent?, _: Editor -> println("Trigger action: $cmd") }
-              val entry =
-                  ClickableRichTextCodeVisionEntry(
-                      id, richText, onClick, null, "", richText.text, emptyList())
-              textRange to entry
-            }
-          }
+      val cmd = codeLens.command
+      if (cmd == null || cmd.command != command) return@runReadAction READY_EMPTY
+
+      val richText = getActionRichText(cmd)
+      val textRange = MyEditorUtil.getTextRange(editor.document, codeLens.range)
+      val onClick = { _: MouseEvent?, _: Editor -> println("Trigger action: $cmd") }
+      val entry =
+          ClickableRichTextCodeVisionEntry(
+              id, richText, onClick, null, "", richText.text, emptyList())
+      val codeVisionEntries = listOf(textRange to entry)
 
       return@runReadAction CodeVisionState.Ready(codeVisionEntries)
     }
-  }
-
-  companion object {
-    fun allEditProviders() =
-        listOf(
-            EditAcceptCodeVisionProvider.Metadata,
-            EditDiffCodeVisionProvider.Metadata,
-            EditRetryCodeVisionProvider.Metadata,
-            EditUndoCodeVisionProvider.Metadata)
   }
 }

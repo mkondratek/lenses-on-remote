@@ -12,7 +12,7 @@ import com.mkondratek.lensesonremote.protocol.ProtocolCommand
 import com.mkondratek.lensesonremote.protocol.Range
 import com.mkondratek.lensesonremote.protocol.TitleParams
 import com.mkondratek.lensesonremote.protocol_extensions.Position
-import com.mkondratek.lensesonremote.providers.EditCodeVisionProvider
+import com.mkondratek.lensesonremote.providers.EditAcceptCodeVisionProvider
 
 @Service(Service.Level.PROJECT)
 class LensesService(val project: Project) {
@@ -34,13 +34,13 @@ class LensesService(val project: Project) {
           .getCodeVisionHost()
           .invalidateProvider(
               CodeVisionHost.LensInvalidateSignal(
-                  editor, EditCodeVisionProvider.allEditProviders().map { it.id }))
+                  editor, listOf(EditAcceptCodeVisionProvider.Metadata.id)))
     }
   }
 
-  fun getLenses(editor: Editor): List<ProtocolCodeLens> {
+  fun getLenses(editor: Editor): ProtocolCodeLens? {
     val vf = editor.virtualFile
-    return lensGroups[vf] ?: emptyList()
+    return lensGroups[vf]
   }
 
   companion object {
