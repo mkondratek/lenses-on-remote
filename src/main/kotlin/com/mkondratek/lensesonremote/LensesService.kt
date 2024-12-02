@@ -16,11 +16,11 @@ import com.mkondratek.lensesonremote.providers.EditCodeVisionProvider
 
 @Service(Service.Level.PROJECT)
 class LensesService(val project: Project) {
-  @Volatile private var lensGroups = mutableMapOf<VirtualFile, List<ProtocolCodeLens>>()
+  private var lensGroups = mutableMapOf<VirtualFile, List<ProtocolCodeLens>>()
 
   fun updateLenses(uriString: String, codeLens: List<ProtocolCodeLens>) {
     val vf = MyEditorUtil.findFileOrScratch(project, uriString) ?: return
-    synchronized(this) { lensGroups[vf] = codeLens }
+    lensGroups[vf] = codeLens
 
     if (project.isDisposed) return
     MyEditorUtil.getSelectedEditors(project).forEach { editor ->
@@ -35,9 +35,7 @@ class LensesService(val project: Project) {
   fun getLenses(editor: Editor): List<ProtocolCodeLens> {
     val vf = editor.virtualFile
 
-    synchronized(this) {
-      return lensGroups[vf] ?: emptyList()
-    }
+    return lensGroups[vf] ?: emptyList()
   }
 
   companion object {
