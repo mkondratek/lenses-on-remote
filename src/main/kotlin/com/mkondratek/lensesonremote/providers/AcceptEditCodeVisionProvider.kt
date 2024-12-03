@@ -54,7 +54,7 @@ class AcceptEditCodeVisionProvider : CodeVisionProvider<Unit> {
       val onClick = { _: MouseEvent?, _: Editor -> println("Trigger action: $cmd") }
       val entry =
           ClickableRichTextCodeVisionEntry(
-              id, richText, onClick, null, "", richText.text, emptyList())
+              id, richText, onClick, null, cmd.title.text, richText.text, emptyList())
       val codeVisionEntries = listOf(textRange to entry)
 
       return@runReadAction CodeVisionState.Ready(codeVisionEntries)
