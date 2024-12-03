@@ -2,13 +2,13 @@ package com.mkondratek.lensesonremote.providers
 
 import com.intellij.codeInsight.codeVision.CodeVisionAnchorKind
 import com.intellij.codeInsight.codeVision.CodeVisionProvider
+import com.intellij.codeInsight.codeVision.CodeVisionRelativeOrdering
 import com.intellij.codeInsight.codeVision.CodeVisionState
 import com.intellij.codeInsight.codeVision.CodeVisionState.Companion.READY_EMPTY
 import com.intellij.codeInsight.codeVision.ui.model.ClickableRichTextCodeVisionEntry
 import com.intellij.codeInsight.codeVision.ui.model.richText.RichText
 import com.intellij.openapi.application.runReadAction
 import com.intellij.openapi.editor.Editor
-import com.intellij.openapi.project.DumbAware
 import com.intellij.ui.JBColor
 import com.intellij.ui.SimpleTextAttributes
 import com.mkondratek.lensesonremote.LensesService
@@ -16,25 +16,20 @@ import com.mkondratek.lensesonremote.MyEditorUtil
 import com.mkondratek.lensesonremote.protocol.ProtocolCommand
 import java.awt.event.MouseEvent
 
-abstract class EditCodeVisionProviderMetadata {
-  abstract val id: String
-  abstract val myActionId: String
-
+class AcceptEditCodeVisionProvider : CodeVisionProvider<Unit> {
   companion object {
-    fun deriveId(command: String) = "EditCodeVisionProvider-${command}"
+    internal const val ID: String = "my_action.fixup.codelens.accept"
   }
-}
 
-abstract class EditCodeVisionProvider(metadata: EditCodeVisionProviderMetadata) :
-    CodeVisionProvider<Unit>, DumbAware {
+  private val textColor: JBColor = JBColor.GREEN
+  private val command: String = "my_action.fixup.codelens.accept"
 
-  open val textColor: JBColor = JBColor.BLACK
-  private val command: String = metadata.myActionId
-
-  override val id = metadata.id
-  override val groupId: String = "EditCodeVisionProvider"
+  override val id = ID
+  override val groupId: String = ID
   override val name: String = "My Edit Lenses"
   override val defaultAnchor: CodeVisionAnchorKind = CodeVisionAnchorKind.Top
+  override val relativeOrderings =
+      listOf(CodeVisionRelativeOrdering.CodeVisionRelativeOrderingFirst)
 
   override fun precomputeOnUiThread(editor: Editor) {}
 

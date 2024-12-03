@@ -8,9 +8,7 @@
         <postStartupActivity
                 implementation="com.mkondratek.lensesonremote.PostStartupActivity"/>
 
-        <codeInsight.codeVisionProvider
-                id="EditAcceptCodeVisionProvider"
-                implementation="com.mkondratek.lensesonremote.providers.EditAcceptCodeVisionProvider"/>
+        <codeInsight.codeVisionProvider implementation="com.mkondratek.lensesonremote.providers.AcceptEditCodeVisionProvider" />
     </extensions>
 
 </idea-plugin>

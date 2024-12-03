@@ -12,7 +12,7 @@ import com.mkondratek.lensesonremote.protocol.ProtocolCommand
 import com.mkondratek.lensesonremote.protocol.Range
 import com.mkondratek.lensesonremote.protocol.TitleParams
 import com.mkondratek.lensesonremote.protocol_extensions.Position
-import com.mkondratek.lensesonremote.providers.EditAcceptCodeVisionProvider
+import com.mkondratek.lensesonremote.providers.AcceptEditCodeVisionProvider
 
 @Service(Service.Level.PROJECT)
 class LensesService(val project: Project) {
@@ -33,8 +33,7 @@ class LensesService(val project: Project) {
       CodeVisionInitializer.getInstance(project)
           .getCodeVisionHost()
           .invalidateProvider(
-              CodeVisionHost.LensInvalidateSignal(
-                  editor, listOf(EditAcceptCodeVisionProvider.Metadata.id)))
+              CodeVisionHost.LensInvalidateSignal(editor, listOf(AcceptEditCodeVisionProvider.ID)))
     }
   }
 
