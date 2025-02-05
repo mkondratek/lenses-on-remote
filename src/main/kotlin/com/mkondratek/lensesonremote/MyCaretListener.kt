@@ -1,5 +1,6 @@
 package com.mkondratek.lensesonremote
 
+import com.intellij.ide.HelpTooltip
 import com.intellij.openapi.editor.event.CaretEvent
 import com.intellij.openapi.editor.event.CaretListener
 import com.intellij.openapi.fileEditor.FileDocumentManager
@@ -10,6 +11,7 @@ class MyCaretListener : CaretListener {
     val lineNumber = e.editor.document.getLineNumber(offset)
     val url = FileDocumentManager.getInstance().getFile(e.editor.document)?.url ?: return
     val project = e.editor.project ?: return
-    LensesService.getInstance(project).updateLenses(url, lineNumber)
+
+
   }
 }
