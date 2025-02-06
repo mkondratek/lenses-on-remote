@@ -9,7 +9,6 @@ import kotlinx.coroutines.flow.emptyFlow
 data class AutoEditData
 internal constructor(
     internal val content: AutoEditContentData,
-    internal val links: LinkData = LinkData(),
     val anchor: String? = null,
     internal val updates: Flow<AutoEditContentData> = emptyFlow(),
 ) : AutoEditResult.AutoEdit {

@@ -50,20 +50,18 @@ class AutoEditPage(val requests: List<AutoEditRequest>, val project: Project) {
     myContentFlow.value =
         prepareContent(
             data.content.copy(html = expandableDefinition?.getDecorated() ?: data.content.html),
-            data.links,
             uiState)
-    update(data.updates, data.links)
+    update(data.updates)
   }
 
-  private suspend fun update(updates: Flow<AutoEditContentData>, links: LinkData) {
+  private suspend fun update(updates: Flow<AutoEditContentData>) {
     updates.flowOn(Dispatchers.Default).collectLatest {
-      myContentFlow.value = prepareContent(it, links, uiState = null)
+      myContentFlow.value = prepareContent(it, uiState = null)
     }
   }
 
   private suspend fun prepareContent(
       content: AutoEditContentData,
-      links: LinkData,
       uiState: UIState?
   ): AutoEditPageContent.Content {
     var downloadSourcesLink: String? = null
@@ -76,7 +74,7 @@ class AutoEditPage(val requests: List<AutoEditRequest>, val project: Project) {
         }
       }
     }
-    return AutoEditPageContent.Content(content, links, uiState, downloadSourcesLink)
+    return AutoEditPageContent.Content(content, uiState, downloadSourcesLink)
   }
 
   /** @return whether the page was restored */
@@ -153,7 +151,6 @@ sealed class AutoEditPageContent {
 
   data class Content(
       val content: AutoEditContentData,
-      val links: LinkData,
       val uiState: UIState?,
       val downloadSourcesLink: String?
   ) : AutoEditPageContent()
