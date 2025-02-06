@@ -39,7 +39,7 @@ internal constructor(
   }
 
   override fun externalUrl(externalUrl: String?): Documentation {
-    return copy(links = links.copy(externalUrl = externalUrl))
+    throw NotImplementedError()
   }
 
   override fun updates(updates: Flow<DocumentationContent>): Documentation {

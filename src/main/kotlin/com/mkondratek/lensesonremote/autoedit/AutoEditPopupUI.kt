@@ -6,30 +6,28 @@ import com.intellij.codeInsight.documentation.DocumentationHtmlUtil.contentInner
 import com.intellij.codeInsight.documentation.DocumentationHtmlUtil.contentOuterPadding
 import com.intellij.codeInsight.documentation.DocumentationHtmlUtil.settingsButtonPadding
 import com.intellij.codeInsight.documentation.DocumentationHtmlUtil.spaceBeforeParagraph
-import com.intellij.codeInsight.documentation.DocumentationManager.NEW_JAVADOC_LOCATION_AND_SIZE
 import com.intellij.codeInsight.documentation.ToggleShowDocsOnHoverAction
 import com.intellij.codeInsight.hint.HintManagerImpl.ActionToIgnore
 import com.intellij.codeInsight.hint.LineTooltipRenderer
+import com.intellij.icons.AllIcons
 import com.intellij.ide.DataManager
 import com.intellij.lang.documentation.ide.actions.AdjustFontSizeAction
-import com.intellij.lang.documentation.ide.actions.DOCUMENTATION_POPUP
-import com.intellij.lang.documentation.ide.actions.EDIT_SOURCE_ACTION_ID
-import com.intellij.lang.documentation.ide.actions.NAVIGATION_GROUP_ID
-import com.intellij.lang.documentation.ide.actions.TOGGLE_AUTO_SHOW_ACTION_ID
-import com.intellij.lang.documentation.ide.actions.TOGGLE_SHOW_IN_POPUP_ACTION_ID
-import com.intellij.lang.documentation.ide.actions.primaryActions
 import com.intellij.lang.documentation.ide.ui.PopupUpdateEvent
 import com.intellij.lang.documentation.ide.ui.scrollPaneWithCorner
-import com.intellij.lang.documentation.ide.ui.toolbarComponent
 import com.intellij.openapi.Disposable
+import com.intellij.openapi.actionSystem.ActionGroup
 import com.intellij.openapi.actionSystem.ActionManager
+import com.intellij.openapi.actionSystem.ActionPlaces
 import com.intellij.openapi.actionSystem.ActionUpdateThread
 import com.intellij.openapi.actionSystem.AnAction
 import com.intellij.openapi.actionSystem.AnActionEvent
+import com.intellij.openapi.actionSystem.DataKey
 import com.intellij.openapi.actionSystem.DefaultActionGroup
+import com.intellij.openapi.actionSystem.ex.ActionUtil
 import com.intellij.openapi.actionSystem.impl.MoreActionGroup
 import com.intellij.openapi.application.EDT
 import com.intellij.openapi.project.Project
+import com.intellij.openapi.ui.popup.JBPopup
 import com.intellij.openapi.util.DimensionService
 import com.intellij.openapi.util.Disposer
 import com.intellij.ui.IdeBorderFactory
@@ -54,6 +52,33 @@ import kotlinx.coroutines.flow.MutableSharedFlow
 import kotlinx.coroutines.flow.collectLatest
 import kotlinx.coroutines.flow.emitAll
 import kotlinx.coroutines.launch
+
+internal val DOCUMENTATION_POPUP: DataKey<JBPopup> = DataKey.create("cody.autoedit.popup")
+
+internal const val PRIMARY_GROUP_ID: String = "AutoEdit.PrimaryGroup"
+internal const val TOGGLE_SHOW_IN_POPUP_ACTION_ID: String = "AutoEdit.ToggleShowInPopup"
+internal const val TOGGLE_AUTO_SHOW_ACTION_ID: String = "AutoEdit.ToggleAutoShow"
+internal const val NAVIGATION_GROUP_ID: String = "AutoEdit.Navigation"
+internal const val EDIT_SOURCE_ACTION_ID: String = "AutoEdit.EditSource"
+
+internal fun primaryActions(): List<AnAction> = groupActions(PRIMARY_GROUP_ID)
+
+private fun groupActions(groupId: String) =
+    listOf(*requireNotNull(ActionUtil.getActionGroup(groupId)).getChildren(null))
+
+const val NEW_JAVADOC_LOCATION_AND_SIZE = "javadoc.popup.new"
+
+internal fun toolbarComponent(actions: ActionGroup, contextComponent: JComponent): JComponent {
+  val toolbar =
+      ActionManager.getInstance()
+          .createActionToolbar(ActionPlaces.JAVADOC_TOOLBAR, actions, true)
+          .also {
+            it.setSecondaryActionsIcon(AllIcons.Actions.More, true)
+            it.setTargetComponent(contextComponent)
+            it.setReservePlaceAutoPopupIcon(false)
+          }
+  return toolbar.component
+}
 
 class AutoEditPopupUI(
     private val project: Project,
