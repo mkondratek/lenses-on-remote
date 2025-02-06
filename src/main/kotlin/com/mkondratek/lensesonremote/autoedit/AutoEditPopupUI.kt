@@ -1,26 +1,20 @@
 package com.mkondratek.lensesonremote.autoedit
 
-import com.intellij.codeInsight.CodeInsightBundle
 import com.intellij.codeInsight.documentation.DocumentationHtmlUtil
 import com.intellij.codeInsight.documentation.DocumentationHtmlUtil.contentInnerPadding
 import com.intellij.codeInsight.documentation.DocumentationHtmlUtil.contentOuterPadding
 import com.intellij.codeInsight.documentation.DocumentationHtmlUtil.settingsButtonPadding
 import com.intellij.codeInsight.documentation.DocumentationHtmlUtil.spaceBeforeParagraph
-import com.intellij.codeInsight.documentation.ToggleShowDocsOnHoverAction
-import com.intellij.codeInsight.hint.HintManagerImpl.ActionToIgnore
 import com.intellij.codeInsight.hint.LineTooltipRenderer
 import com.intellij.icons.AllIcons
 import com.intellij.ide.DataManager
-import com.intellij.lang.documentation.ide.actions.AdjustFontSizeAction
 import com.intellij.lang.documentation.ide.ui.PopupUpdateEvent
 import com.intellij.lang.documentation.ide.ui.scrollPaneWithCorner
 import com.intellij.openapi.Disposable
 import com.intellij.openapi.actionSystem.ActionGroup
 import com.intellij.openapi.actionSystem.ActionManager
 import com.intellij.openapi.actionSystem.ActionPlaces
-import com.intellij.openapi.actionSystem.ActionUpdateThread
 import com.intellij.openapi.actionSystem.AnAction
-import com.intellij.openapi.actionSystem.AnActionEvent
 import com.intellij.openapi.actionSystem.DataKey
 import com.intellij.openapi.actionSystem.DefaultActionGroup
 import com.intellij.openapi.actionSystem.ex.ActionUtil
@@ -60,6 +54,7 @@ internal const val TOGGLE_SHOW_IN_POPUP_ACTION_ID: String = "AutoEdit.ToggleShow
 internal const val TOGGLE_AUTO_SHOW_ACTION_ID: String = "AutoEdit.ToggleAutoShow"
 internal const val NAVIGATION_GROUP_ID: String = "AutoEdit.Navigation"
 internal const val EDIT_SOURCE_ACTION_ID: String = "AutoEdit.EditSource"
+val SELECTED_QUICK_DOC_TEXT: DataKey<String> = DataKey.create<String>("QUICK_DOC.SELECTED_TEXT")
 
 internal fun primaryActions(): List<AnAction> = groupActions(PRIMARY_GROUP_ID)
 
@@ -105,29 +100,30 @@ class AutoEditPopupUI(
   init {
     val editorPane = ui.editorPane
     browser.closeTrigger { coroutineScope.launch(Dispatchers.EDT) { myPopup.cancel() } }
-    val primaryActions = primaryActions().toMutableList()
-    val secondaryActions = ArrayList<AnAction>()
-    secondaryActions.add(ActionManager.getInstance().getAction(TOGGLE_SHOW_IN_POPUP_ACTION_ID))
-    secondaryActions.add(ToggleShowDocsOnHoverAction())
-    secondaryActions.add(ActionManager.getInstance().getAction(TOGGLE_AUTO_SHOW_ACTION_ID))
-    secondaryActions.add(AdjustFontSizeAction())
-    secondaryActions.add(RestoreDefaultSizeAction())
+    //    val primaryActions = primaryActions().toMutableList()
+    //    val secondaryActions = ArrayList<AnAction>()
+    //
+    // secondaryActions.add(ActionManager.getInstance().getAction(TOGGLE_SHOW_IN_POPUP_ACTION_ID))
+    //    secondaryActions.add(ToggleShowDocsOnHoverAction())
+    //    secondaryActions.add(ActionManager.getInstance().getAction(TOGGLE_AUTO_SHOW_ACTION_ID))
+    //    secondaryActions.add(AdjustFontSizeAction())
+    //    secondaryActions.add(RestoreDefaultSizeAction())
 
-    val editSourceAction = ActionManager.getInstance().getAction(EDIT_SOURCE_ACTION_ID)
-    val navigationGroup = ActionManager.getInstance().getAction(NAVIGATION_GROUP_ID)
-    primaryActions[primaryActions.indexOf(navigationGroup)] =
-        DefaultActionGroup().apply {
-          copyFromGroup(navigationGroup as DefaultActionGroup)
-          remove(editSourceAction)
-        }
+    //    val editSourceAction = ActionManager.getInstance().getAction(EDIT_SOURCE_ACTION_ID)
+    //    val navigationGroup = ActionManager.getInstance().getAction(NAVIGATION_GROUP_ID)
+    //    primaryActions[primaryActions.indexOf(navigationGroup)] =
+    //        DefaultActionGroup().apply {
+    //          copyFromGroup(navigationGroup as DefaultActionGroup)
+    //          remove(editSourceAction)
+    //        }
 
     val gearActions: DefaultActionGroup = MoreActionGroup()
-    gearActions.addAll(secondaryActions)
-    gearActions.addSeparator()
-    gearActions.addAll(primaryActions)
+    //    gearActions.addAll(secondaryActions)
+    //    gearActions.addSeparator()
+    //    gearActions.addAll(primaryActions)
 
     val corner =
-        toolbarComponent(DefaultActionGroup(editSourceAction, gearActions), editorPane).apply {
+        toolbarComponent(DefaultActionGroup(gearActions), editorPane).apply {
           border = JBUI.Borders.empty(0, 0, contentOuterPadding - 3, settingsButtonPadding - 5)
         }
     ui.trackDocumentationBackgroundChange(this) { corner.background = it }
@@ -210,14 +206,6 @@ class AutoEditPopupUI(
     }
   }
 
-  private fun detachUI(): AutoEditUI {
-    EDT.assertIsEdt()
-    browser.clearCloseTrigger()
-    val ui = ui
-    _ui = null
-    return ui
-  }
-
   private var manuallyResized = false
 
   fun useStoredSize(): Supplier<Boolean> {
@@ -247,20 +235,6 @@ class AutoEditPopupUI(
       manuallyResized = true
       DimensionService.getInstance()
           .setSize(NEW_JAVADOC_LOCATION_AND_SIZE, myPopup.contentSize, project)
-    }
-  }
-
-  private inner class RestoreDefaultSizeAction :
-      AnAction(CodeInsightBundle.messagePointer("javadoc.restore.size")), ActionToIgnore {
-
-    override fun update(e: AnActionEvent) {
-      e.presentation.isEnabledAndVisible = manuallyResized
-    }
-
-    override fun getActionUpdateThread() = ActionUpdateThread.BGT
-
-    override fun actionPerformed(e: AnActionEvent) {
-      restoreSize()
     }
   }
 }

@@ -4,31 +4,30 @@ import com.intellij.codeInsight.CodeInsightBundle
 import com.intellij.codeInsight.documentation.DocumentationHintEditorPane
 import com.intellij.codeInsight.documentation.DocumentationHtmlUtil
 import com.intellij.codeInsight.documentation.DocumentationLinkHandler
-import com.intellij.codeInsight.documentation.DocumentationManager.SELECTED_QUICK_DOC_TEXT
 import com.intellij.codeInsight.documentation.DocumentationManager.decorate
 import com.intellij.codeInsight.documentation.DocumentationScrollPane
+import com.intellij.codeInsight.documentation.getDocumentationFontSize
+import com.intellij.codeInsight.documentation.setDocumentationFontSize
 import com.intellij.codeInsight.hint.DefinitionSwitcher
 import com.intellij.codeInsight.hint.LineTooltipRenderer
 import com.intellij.ide.DataManager
 import com.intellij.lang.documentation.DocumentationImageResolver
 import com.intellij.lang.documentation.DocumentationMarkup.CLASS_CONTENT
-import com.intellij.lang.documentation.ide.actions.PRIMARY_GROUP_ID
-import com.intellij.lang.documentation.ide.actions.registerBackForwardActions
-import com.intellij.lang.documentation.ide.ui.DEFAULT_UI_RESPONSE_TIMEOUT
-import com.intellij.lang.documentation.ide.ui.DocumentationFontSizeModel
-import com.intellij.lang.documentation.ide.ui.FontSizeMouseWheelListener
 import com.intellij.lang.documentation.ide.ui.PopupUpdateEvent
 import com.intellij.lang.documentation.ide.ui.PopupUpdateEvent.ContentUpdateKind
-import com.intellij.lang.documentation.ide.ui.linkChunk
 import com.intellij.openapi.Disposable
 import com.intellij.openapi.actionSystem.DataProvider
 import com.intellij.openapi.application.EDT
+import com.intellij.openapi.editor.ex.EditorSettingsExternalizable
+import com.intellij.openapi.editor.ex.util.EditorUtil
+import com.intellij.openapi.options.FontSize
 import com.intellij.openapi.project.Project
 import com.intellij.openapi.util.Disposer
 import com.intellij.openapi.util.text.HtmlChunk
 import com.intellij.platform.backend.presentation.TargetPresentation
 import com.intellij.platform.ide.documentation.DOCUMENTATION_BROWSER
 import com.intellij.platform.util.coroutines.flow.collectLatestUndispatched
+import com.intellij.ui.FontSizeModel
 import com.intellij.ui.PopupHandler
 import com.intellij.util.ui.EDT
 import com.intellij.util.ui.JBUI
@@ -37,9 +36,12 @@ import com.intellij.util.ui.UIUtil
 import com.intellij.util.ui.accessibility.ScreenReader
 import java.awt.Color
 import java.awt.Rectangle
+import java.awt.event.MouseWheelEvent
+import java.awt.event.MouseWheelListener
 import javax.swing.JComponent
 import javax.swing.JLabel
 import javax.swing.JScrollPane
+import kotlin.math.abs
 import kotlinx.coroutines.CoroutineName
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.CoroutineStart
@@ -47,7 +49,9 @@ import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.cancel
 import kotlinx.coroutines.channels.BufferOverflow
 import kotlinx.coroutines.delay
+import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.MutableSharedFlow
+import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.SharedFlow
 import kotlinx.coroutines.flow.asSharedFlow
 import kotlinx.coroutines.flow.collectLatest
@@ -73,7 +77,6 @@ class AutoEditUI(
   private val myContentUpdates =
       MutableSharedFlow<ContentUpdateKind>(
           replay = 1, onBufferOverflow = BufferOverflow.DROP_OLDEST)
-  val contentUpdates: SharedFlow<ContentUpdateKind> = myContentUpdates.asSharedFlow()
   private val myContentSizeUpdates =
       MutableSharedFlow<PopupUpdateEvent>(replay = 1, onBufferOverflow = BufferOverflow.DROP_OLDEST)
   val contentSizeUpdates: SharedFlow<PopupUpdateEvent> = myContentSizeUpdates.asSharedFlow()
@@ -130,7 +133,6 @@ class AutoEditUI(
     for (action in linkHandler.createLinkActions()) {
       action.registerCustomShortcutSet(editorPane, this)
     }
-    registerBackForwardActions(editorPane)
 
     val contextMenu =
         PopupHandler.installPopupMenu(
@@ -248,8 +250,8 @@ class AutoEditUI(
   ) {
     val content = pageContent.content
     imageResolver = content.imageResolver
-    val linkChunk = linkChunk(presentation.presentableText, pageContent.links)
-    val decorated = decorate(content.html, null, linkChunk, pageContent.downloadSourcesLink)
+    //    val linkChunk = linkChunk(presentation.presentableText, pageContent.links)
+    val decorated = decorate(content.html, null, null, pageContent.downloadSourcesLink)
     if (!updateContent(decorated, presentation, ContentKind.DocumentationPage)) {
       return
     }
@@ -363,5 +365,54 @@ class AutoEditUI(
   private enum class ContentKind {
     InfoMessage,
     DocumentationPage,
+  }
+}
+
+class DocumentationFontSizeModel : FontSizeModel<FontSize> {
+
+  private val myFontSize: MutableStateFlow<FontSize> =
+      MutableStateFlow(getDocumentationFontSize()) // initialize with current state
+
+  override var value: FontSize
+    get() {
+      return myFontSize.value
+    }
+    set(value) {
+      setDocumentationFontSize(value) // persist modifications
+      myFontSize.value = value
+    }
+
+  override val values: List<FontSize>
+    get() = FontSize.entries.toList()
+
+  override val updates: Flow<FontSize> = myFontSize.asSharedFlow()
+}
+
+class FontSizeMouseWheelListener(
+    private val model: FontSizeModel<FontSize>,
+) : MouseWheelListener {
+
+  override fun mouseWheelMoved(e: MouseWheelEvent) {
+    if (!EditorSettingsExternalizable.getInstance().isWheelFontChangeEnabled ||
+        !EditorUtil.isChangeFontSize(e)) {
+      // TODO this check must be done outside this listener: listener should not even be registered
+      // if this case
+      return
+    }
+    val rotation = e.wheelRotation
+    if (rotation == 0) {
+      return
+    }
+    var newFontSize = model.value
+    val increase = rotation <= 0
+    repeat(abs(rotation)) {
+      newFontSize =
+          if (increase) {
+            newFontSize.larger()
+          } else {
+            newFontSize.smaller()
+          }
+    }
+    model.value = newFontSize
   }
 }

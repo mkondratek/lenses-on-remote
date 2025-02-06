@@ -11,7 +11,7 @@ data class LinkData(
 
 data class AutoEditContentData(
     val html: String,
-    val imageResolver: DocumentationImageResolver?,
+    val imageResolver: DocumentationImageResolver? = null,
     val definitionDetails: String? = null,
     val targetElement: PsiElement? = null
 ) : DocumentationContent
