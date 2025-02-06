@@ -25,8 +25,6 @@ open class DefaultPopupContext(
     builder.setCancelOnClickOutside(true)
   }
 
-  override fun setUpPopup(popup: AbstractPopup, popupUI: AutoEditPopupUI) {}
-
   override fun boundsHandler(): PopupBoundsHandler {
     return DataContextPopupBoundsHandler(::dataContext)
   }

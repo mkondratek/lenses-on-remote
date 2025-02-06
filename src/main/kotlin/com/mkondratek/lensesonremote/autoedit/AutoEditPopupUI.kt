@@ -24,13 +24,10 @@ import com.intellij.openapi.project.Project
 import com.intellij.openapi.ui.popup.JBPopup
 import com.intellij.openapi.util.DimensionService
 import com.intellij.openapi.util.Disposer
-import com.intellij.ui.IdeBorderFactory
-import com.intellij.ui.SideBorder
 import com.intellij.ui.popup.AbstractPopup
 import com.intellij.ui.scale.JBUIScale
 import com.intellij.util.ui.EDT
 import com.intellij.util.ui.JBUI
-import com.intellij.util.ui.UIUtil
 import java.awt.BorderLayout
 import java.awt.event.ComponentAdapter
 import java.awt.event.ComponentEvent
@@ -153,15 +150,6 @@ class AutoEditPopupUI(
     }
   }
 
-  fun jointHover() {
-    // TODO ? separate DocumentationJointHoverUI class
-    val bg = UIUtil.getToolTipActionBackground()
-    Disposer.register(this, ui.setBackground(bg))
-    component.background = bg
-    component.border =
-        IdeBorderFactory.createBorder(UIUtil.getTooltipSeparatorColor(), SideBorder.TOP)
-  }
-
   fun setPopup(popup: AbstractPopup) {
     Disposer.register(popup, this)
     myPopup = popup
@@ -221,12 +209,6 @@ class AutoEditPopupUI(
       EDT.assertIsEdt()
       manuallyResized
     }
-  }
-
-  private fun restoreSize() {
-    manuallyResized = false
-    DimensionService.getInstance().setSize(NEW_JAVADOC_LOCATION_AND_SIZE, null, project)
-    popupUpdateFlow.tryEmit(PopupUpdateEvent.RestoreSize)
   }
 
   private inner class PopupResizeListener : Runnable {

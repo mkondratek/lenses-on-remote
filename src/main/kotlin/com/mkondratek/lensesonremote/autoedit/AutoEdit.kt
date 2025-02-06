@@ -37,12 +37,6 @@ suspend fun showAutoEditPopup(
   }
   val popupUI = AutoEditPopupUI(project, AutoEditUI(project, browser))
   val popup = createAutoEditPopup(project, popupUI, popupContext)
-  try {
-    popupContext.setUpPopup(popup, popupUI)
-  } catch (ce: CancellationException) {
-    Disposer.dispose(popup)
-    throw ce
-  }
   val boundsHandler = popupContext.boundsHandler()
   val resized = popupUI.useStoredSize()
   popupUI.updatePopup { boundsHandler.updatePopup(popup, resized.get(), it) }
@@ -107,8 +101,6 @@ internal fun Dimension.adjustForEvent(
 sealed interface PopupContext {
 
   fun preparePopup(builder: ComponentPopupBuilder)
-
-  fun setUpPopup(popup: AbstractPopup, popupUI: AutoEditPopupUI)
 
   fun boundsHandler(): PopupBoundsHandler
 }

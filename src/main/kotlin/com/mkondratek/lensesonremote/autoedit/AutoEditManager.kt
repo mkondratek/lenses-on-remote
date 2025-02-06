@@ -14,7 +14,6 @@ import com.intellij.openapi.project.Project
 import com.intellij.openapi.util.Disposer
 import com.intellij.platform.backend.documentation.DocumentationResult
 import com.intellij.platform.backend.documentation.DocumentationTarget
-import com.intellij.platform.backend.documentation.impl.DocumentationRequest
 import com.intellij.platform.backend.presentation.TargetPresentation
 import com.intellij.platform.util.coroutines.childScope
 import com.intellij.ui.popup.AbstractPopup
@@ -121,6 +120,4 @@ object EmptyDocumentationTarget : DocumentationTarget, Pointer<EmptyDocumentatio
       TargetPresentation.builder("").presentation()
 
   override fun computeDocumentation(): DocumentationResult? = null
-
-  val request: DocumentationRequest = DocumentationRequest(this, computePresentation())
 }
