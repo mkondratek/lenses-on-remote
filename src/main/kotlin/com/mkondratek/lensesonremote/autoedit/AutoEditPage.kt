@@ -4,12 +4,10 @@ import com.intellij.codeInsight.documentation.actions.DocumentationDownloader
 import com.intellij.lang.documentation.DocumentationMarkup.DEFINITION_END
 import com.intellij.lang.documentation.ide.impl.DocumentationUsageCollector
 import com.intellij.lang.documentation.ide.ui.ExpandableDefinition
-import com.intellij.model.Pointer
 import com.intellij.openapi.application.readAction
 import com.intellij.openapi.project.IndexNotReadyException
 import com.intellij.openapi.project.Project
 import com.intellij.openapi.vfs.VirtualFile
-import com.intellij.platform.backend.documentation.DocumentationTarget
 import com.intellij.psi.PsiElement
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.flow.Flow
@@ -37,7 +35,7 @@ class AutoEditPage(val requests: List<AutoEditRequest>, val project: Project) {
   suspend fun loadPage() {
     val data =
         try {
-          computeAutoEdit(request.targetPointer)
+          computeAutoEdit()
         } catch (e: IndexNotReadyException) {
           null // normal situation, nothing to do
         }
@@ -77,45 +75,10 @@ class AutoEditPage(val requests: List<AutoEditRequest>, val project: Project) {
     return AutoEditPageContent.Content(content, uiState, downloadSourcesLink)
   }
 
-  /** @return whether the page was restored */
-  fun restorePage(snapshot: UISnapshot): Boolean {
-    when (val pageContent = myContentFlow.value) {
-      null -> {
-        // This can happen in the following scenario:
-        // 1. Show doc.
-        // 2. Click a link, a new page will open and start loading.
-        // 3. Invoke the Back action during "Fetching..." message.
-        //    At this point the request from link is cancelled, but stored in the forward stack of
-        // the history.
-        // 4. Invoke the Forward action.
-        //    The page is taken from forward stack, but it was never loaded.
-        //    Here we reload that cancelled request again
-        return false
-      }
-      is AutoEditPageContent.Empty -> {
-        // nothing to do here
-        return true
-      }
-      is AutoEditPageContent.Content -> {
-        // Consider the following steps:
-        // 1. Open doc with anchor.
-        // 2. Select some link with Tab.
-        // 3. Activate the link, a new page will open.
-        // 4. Go back, the previous page is restored, its last computed UI state is
-        // UIState.ScrollToAnchor.
-        // Expected: scroll state and selected link from 2 are restored.
-        // Without the following line: the doc scrolls to the anchor, computed in 1.
-        // Regardless of last computed UIState, we always want to restore the snapshot.
-        myContentFlow.value = pageContent.copy(uiState = UIState.RestoreFromSnapshot(snapshot))
-        return true
-      }
-    }
-  }
-
   private fun PsiElement.getTargetFile(): VirtualFile? =
       containingFile?.run { virtualFile ?: originalFile.virtualFile }
 
-  fun computeAutoEdit(targetPointer: Pointer<out DocumentationTarget>): AutoEditData? {
+  fun computeAutoEdit(): AutoEditData? {
     //    return AutoEditData(
     //      content = AutoEditContentData("<html><body>Hello world from Auto Edit!<body></html>"),
     //    )

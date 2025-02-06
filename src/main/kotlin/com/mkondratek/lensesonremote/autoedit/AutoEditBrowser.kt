@@ -35,13 +35,9 @@ private constructor(
 
   private sealed class BrowserRequest {
 
-    class Load(val request: AutoEditRequest, val reset: Boolean) : BrowserRequest()
+    class Load(val request: AutoEditRequest) : BrowserRequest()
 
     object Reload : BrowserRequest()
-
-    class Link(val url: String) : BrowserRequest()
-
-    class Restore(val snapshot: HistorySnapshot) : BrowserRequest()
   }
 
   private val myRequestFlow: MutableSharedFlow<BrowserRequest> =
@@ -60,31 +56,22 @@ private constructor(
 
   override fun dispose() {
     cs.cancel("DocumentationBrowser disposal")
-    myHistory.clear()
   }
 
   internal fun closeTrigger(close: () -> Unit) {
     closeTrigger = close
   }
 
-  internal fun clearCloseTrigger() {
-    closeTrigger = null
-  }
-
   fun resetBrowser(request: AutoEditRequest) {
-    load(request, reset = true)
+    load(request)
   }
 
-  private fun load(request: AutoEditRequest, reset: Boolean) {
-    check(myRequestFlow.tryEmit(BrowserRequest.Load(request, reset)))
+  private fun load(request: AutoEditRequest) {
+    check(myRequestFlow.tryEmit(BrowserRequest.Load(request)))
   }
 
   override fun reload() {
     check(myRequestFlow.tryEmit(BrowserRequest.Reload))
-  }
-
-  fun handleLink(url: String) {
-    check(myRequestFlow.tryEmit(BrowserRequest.Link(url)))
   }
 
   private val myPageFlow = MutableStateFlow(initialPage)
@@ -102,51 +89,16 @@ private constructor(
 
   private suspend fun handleBrowserRequest(request: BrowserRequest): Unit =
       when (request) {
-        is BrowserRequest.Load -> handleLoadRequest(request.request, request.reset)
+        is BrowserRequest.Load -> handleLoadRequest(request.request)
         is BrowserRequest.Reload -> page.loadPage()
-        is BrowserRequest.Link -> handleLinkRequest(request.url)
-        is BrowserRequest.Restore -> handleRestoreRequest(request.snapshot)
       }
 
-  private suspend fun handleLoadRequest(request: AutoEditRequest, reset: Boolean) {
+  private suspend fun handleLoadRequest(request: AutoEditRequest) {
     val page =
         withContext(Dispatchers.EDT) {
-          if (reset) {
-            myHistory.clear()
-          } else {
-            myHistory.nextPage()
-          }
           AutoEditPage(listOf(request), project).also { this@AutoEditBrowser.page = it }
         }
     page.loadPage()
-  }
-
-  private fun handleLinkRequest(url: String) {
-    throw NotImplementedError()
-  }
-
-  private suspend fun handleRestoreRequest(snapshot: HistorySnapshot) {
-    val page = snapshot.page
-    val restored = page.restorePage(snapshot.ui)
-    this.page = page
-    if (!restored) {
-      page.loadPage()
-    }
-  }
-
-  private val myHistory = AutoEditBrowserHistory(::historySnapshot, ::restore)
-
-  private class HistorySnapshot(
-      val page: AutoEditPage,
-      val ui: UISnapshot,
-  )
-
-  private fun historySnapshot(): HistorySnapshot {
-    return HistorySnapshot(page, ui.uiSnapshot())
-  }
-
-  private fun restore(snapshot: HistorySnapshot) {
-    check(myRequestFlow.tryEmit(BrowserRequest.Restore(snapshot)))
   }
 
   companion object {

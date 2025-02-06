@@ -1,6 +1,5 @@
 package com.mkondratek.lensesonremote.autoedit
 
-import com.intellij.platform.backend.documentation.BlockingDocumentationContentFlow
 import com.intellij.platform.backend.documentation.DocumentationContent
 import java.awt.Image
 import kotlinx.coroutines.flow.Flow
@@ -34,17 +33,5 @@ internal constructor(
 
   override fun definitionDetails(details: String?): AutoEditResult.AutoEdit {
     return content(content.copy(definitionDetails = details))
-  }
-
-  override fun externalUrl(externalUrl: String?): AutoEditResult.AutoEdit {
-    throw NotImplementedError()
-  }
-
-  override fun updates(updates: Flow<DocumentationContent>): AutoEditResult.AutoEdit {
-    @Suppress("UNCHECKED_CAST") return copy(updates = updates as Flow<AutoEditContentData>)
-  }
-
-  override fun blockingUpdates(updates: BlockingDocumentationContentFlow): AutoEditResult.AutoEdit {
-    throw NotImplementedError()
   }
 }

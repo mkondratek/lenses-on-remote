@@ -3,7 +3,6 @@ package com.mkondratek.lensesonremote.autoedit
 import com.intellij.codeInsight.CodeInsightBundle
 import com.intellij.codeInsight.documentation.DocumentationHintEditorPane
 import com.intellij.codeInsight.documentation.DocumentationHtmlUtil
-import com.intellij.codeInsight.documentation.DocumentationLinkHandler
 import com.intellij.codeInsight.documentation.DocumentationManager.decorate
 import com.intellij.codeInsight.documentation.DocumentationScrollPane
 import com.intellij.codeInsight.documentation.getDocumentationFontSize
@@ -72,7 +71,6 @@ class AutoEditUI(
   val switcherToolbarComponent: JComponent
 
   private var imageResolver: DocumentationImageResolver? = null
-  private val linkHandler: DocumentationLinkHandler
   private val cs = CoroutineScope(Dispatchers.EDT)
   private val myContentUpdates =
       MutableSharedFlow<ContentUpdateKind>(
@@ -91,7 +89,6 @@ class AutoEditUI(
         }
     Disposer.register(this, editorPane)
     scrollPane.addMouseWheelListener(FontSizeMouseWheelListener(fontSize))
-    linkHandler = DocumentationLinkHandler.createAndRegister(editorPane, this, ::linkActivated)
     switcher = createSwitcher()
     switcherToolbarComponent =
         switcher.createToolbar().component.apply {
@@ -129,10 +126,6 @@ class AutoEditUI(
 
     browser.ui = this
     Disposer.register(this, browser)
-
-    for (action in linkHandler.createLinkActions()) {
-      action.registerCustomShortcutSet(editorPane, this)
-    }
 
     val contextMenu =
         PopupHandler.installPopupMenu(
@@ -174,12 +167,6 @@ class AutoEditUI(
           editorPane.selectedText?.replace(160.toChar(), ' ') // IDEA-86633
       else -> null
     }
-  }
-
-  fun setBackground(color: Color): Disposable {
-    val editorBG = editorPane.background
-    editorPane.background = color
-    return Disposable { editorPane.background = editorBG }
   }
 
   fun trackDocumentationBackgroundChange(disposable: Disposable, onChange: (Color) -> Unit) {
@@ -328,31 +315,6 @@ class AutoEditUI(
       }
       is UIState.ScrollToAnchor -> {
         UIUtil.scrollToReference(editorPane, uiState.anchor)
-      }
-      is UIState.RestoreFromSnapshot -> {
-        uiState.snapshot.invoke()
-      }
-    }
-  }
-
-  private fun linkActivated(href: String) {
-    if (href.startsWith("#")) {
-      UIUtil.scrollToReference(editorPane, href.removePrefix("#"))
-    } else {
-      browser.handleLink(href)
-    }
-  }
-
-  fun uiSnapshot(): UISnapshot {
-    EDT.assertIsEdt()
-    val viewRect = scrollPane.viewport.viewRect
-    val highlightedLink = linkHandler.highlightedLink
-    return {
-      EDT.assertIsEdt()
-      linkHandler.highlightLink(highlightedLink)
-      editorPane.scrollRectToVisible(viewRect)
-      if (ScreenReader.isActive()) {
-        editorPane.caretPosition = 0
       }
     }
   }
