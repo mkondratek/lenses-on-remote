@@ -56,80 +56,71 @@ import kotlinx.coroutines.flow.emitAll
 import kotlinx.coroutines.launch
 
 class AutoEditPopupUI(
-  private val project: Project,
-  ui: AutoEditUI,
+    private val project: Project,
+    ui: AutoEditUI,
 ) : Disposable {
 
   private var _ui: AutoEditUI? = ui
-  val ui: AutoEditUI get() = requireNotNull(_ui) { "already detached" }
-  val browser: AutoEditBrowser get() = ui.browser
+  val ui: AutoEditUI
+    get() = requireNotNull(_ui) { "already detached" }
+
+  val browser: AutoEditBrowser
+    get() = ui.browser
 
   val component: JComponent
-  val preferableFocusComponent: JComponent get() = ui.editorPane
+  val preferableFocusComponent: JComponent
+    get() = ui.editorPane
 
   val coroutineScope: CoroutineScope = CoroutineScope(Job())
-  private val popupUpdateFlow = MutableSharedFlow<PopupUpdateEvent>(replay = 1, onBufferOverflow = BufferOverflow.DROP_OLDEST)
+  private val popupUpdateFlow =
+      MutableSharedFlow<PopupUpdateEvent>(replay = 1, onBufferOverflow = BufferOverflow.DROP_OLDEST)
 
   private lateinit var myPopup: AbstractPopup
 
   init {
     val editorPane = ui.editorPane
-    browser.closeTrigger {
-      coroutineScope.launch(Dispatchers.EDT) {
-        myPopup.cancel()
-      }
-    }
+    browser.closeTrigger { coroutineScope.launch(Dispatchers.EDT) { myPopup.cancel() } }
     val primaryActions = primaryActions().toMutableList()
     val secondaryActions = ArrayList<AnAction>()
-    secondaryActions.add(
-      ActionManager.getInstance().getAction(
-        TOGGLE_SHOW_IN_POPUP_ACTION_ID
-      ))
+    secondaryActions.add(ActionManager.getInstance().getAction(TOGGLE_SHOW_IN_POPUP_ACTION_ID))
     secondaryActions.add(ToggleShowDocsOnHoverAction())
-    secondaryActions.add(
-      ActionManager.getInstance().getAction(
-        TOGGLE_AUTO_SHOW_ACTION_ID
-      ))
+    secondaryActions.add(ActionManager.getInstance().getAction(TOGGLE_AUTO_SHOW_ACTION_ID))
     secondaryActions.add(AdjustFontSizeAction())
     secondaryActions.add(RestoreDefaultSizeAction())
 
-    val editSourceAction = ActionManager.getInstance().getAction(
-      EDIT_SOURCE_ACTION_ID
-    )
-    val navigationGroup = ActionManager.getInstance().getAction(
-      NAVIGATION_GROUP_ID
-    )
-    primaryActions[primaryActions.indexOf(navigationGroup)] = DefaultActionGroup().apply {
-      copyFromGroup(navigationGroup as DefaultActionGroup)
-      remove(editSourceAction)
-    }
+    val editSourceAction = ActionManager.getInstance().getAction(EDIT_SOURCE_ACTION_ID)
+    val navigationGroup = ActionManager.getInstance().getAction(NAVIGATION_GROUP_ID)
+    primaryActions[primaryActions.indexOf(navigationGroup)] =
+        DefaultActionGroup().apply {
+          copyFromGroup(navigationGroup as DefaultActionGroup)
+          remove(editSourceAction)
+        }
 
     val gearActions: DefaultActionGroup = MoreActionGroup()
     gearActions.addAll(secondaryActions)
     gearActions.addSeparator()
     gearActions.addAll(primaryActions)
 
-    val corner = toolbarComponent(DefaultActionGroup(editSourceAction, gearActions), editorPane).apply {
-      border = JBUI.Borders.empty(0, 0, contentOuterPadding - 3, settingsButtonPadding - 5)
-    }
-    ui.trackDocumentationBackgroundChange(this) {
-      corner.background = it
-    }
-    component = AutoEditPopupPane(ui.scrollPane).also { pane ->
-      pane.add(scrollPaneWithCorner(this, ui.scrollPane, corner), BorderLayout.CENTER)
-      pane.add(ui.switcherToolbarComponent, BorderLayout.NORTH)
-      updatePaddings(corner)
-      corner.addComponentListener(object : ComponentAdapter() {
-        override fun componentResized(e: ComponentEvent?) {
-          updatePaddings(corner)
-          popupUpdateFlow.tryEmit(PopupUpdateEvent.ToolbarSizeChanged)
+    val corner =
+        toolbarComponent(DefaultActionGroup(editSourceAction, gearActions), editorPane).apply {
+          border = JBUI.Borders.empty(0, 0, contentOuterPadding - 3, settingsButtonPadding - 5)
         }
-      })
-    }
+    ui.trackDocumentationBackgroundChange(this) { corner.background = it }
+    component =
+        AutoEditPopupPane(ui.scrollPane).also { pane ->
+          pane.add(scrollPaneWithCorner(this, ui.scrollPane, corner), BorderLayout.CENTER)
+          pane.add(ui.switcherToolbarComponent, BorderLayout.NORTH)
+          updatePaddings(corner)
+          corner.addComponentListener(
+              object : ComponentAdapter() {
+                override fun componentResized(e: ComponentEvent?) {
+                  updatePaddings(corner)
+                  popupUpdateFlow.tryEmit(PopupUpdateEvent.ToolbarSizeChanged)
+                }
+              })
+        }
 
-    coroutineScope.launch {
-      popupUpdateFlow.emitAll(ui.contentSizeUpdates)
-    }
+    coroutineScope.launch { popupUpdateFlow.emitAll(ui.contentSizeUpdates) }
   }
 
   override fun dispose() {
@@ -146,7 +137,8 @@ class AutoEditPopupUI(
     val bg = UIUtil.getToolTipActionBackground()
     Disposer.register(this, ui.setBackground(bg))
     component.background = bg
-    component.border = IdeBorderFactory.createBorder(UIUtil.getTooltipSeparatorColor(), SideBorder.TOP)
+    component.border =
+        IdeBorderFactory.createBorder(UIUtil.getTooltipSeparatorColor(), SideBorder.TOP)
   }
 
   fun setPopup(popup: AbstractPopup) {
@@ -156,8 +148,7 @@ class AutoEditPopupUI(
     DataManager.registerDataProvider(component) { dataId ->
       if (DOCUMENTATION_POPUP.`is`(dataId)) {
         popup
-      }
-      else {
+      } else {
         null
       }
     }
@@ -167,28 +158,29 @@ class AutoEditPopupUI(
   }
 
   fun updatePopup(updater: suspend (PopupUpdateEvent) -> Unit) {
-    coroutineScope.launch(Dispatchers.EDT) {
-      popupUpdateFlow.collectLatest {
-        updater(it)
-      }
-    }
+    coroutineScope.launch(Dispatchers.EDT) { popupUpdateFlow.collectLatest { updater(it) } }
   }
 
   private fun updatePaddings(toolbar: JComponent) {
-    ui.locationLabel.border = JBUI.Borders.empty(
-      2 + spaceBeforeParagraph, LineTooltipRenderer.CONTENT_PADDING,
-      2 + contentOuterPadding, 2 + (toolbar.width / JBUIScale.scale(1f)).toInt())
+    ui.locationLabel.border =
+        JBUI.Borders.empty(
+            2 + spaceBeforeParagraph,
+            LineTooltipRenderer.CONTENT_PADDING,
+            2 + contentOuterPadding,
+            2 + (toolbar.width / JBUIScale.scale(1f)).toInt())
     val editorPreferredSize = ui.editorPane.preferredSize
     val viewPanel = ui.scrollPane.viewport.view as JPanel
-    if (editorPreferredSize.height < toolbar.height * 2
-      && !ui.locationLabel.isVisible
-      && editorPreferredSize.width + toolbar.width > JBUIScale.scale(
-        DocumentationHtmlUtil.docPopupMinWidth)
-    ) {
-      viewPanel.border = JBUI.Borders.emptyRight(
-        (toolbar.width / JBUIScale.scale(1f)).toInt() - contentOuterPadding - contentInnerPadding - 10)
-    }
-    else {
+    if (editorPreferredSize.height < toolbar.height * 2 &&
+        !ui.locationLabel.isVisible &&
+        editorPreferredSize.width + toolbar.width >
+            JBUIScale.scale(DocumentationHtmlUtil.docPopupMinWidth)) {
+      viewPanel.border =
+          JBUI.Borders.emptyRight(
+              (toolbar.width / JBUIScale.scale(1f)).toInt() -
+                  contentOuterPadding -
+                  contentInnerPadding -
+                  10)
+    } else {
       viewPanel.border = JBUI.Borders.empty()
     }
   }
@@ -206,8 +198,7 @@ class AutoEditPopupUI(
   fun useStoredSize(): Supplier<Boolean> {
     EDT.assertIsEdt()
     myPopup.addResizeListener(PopupResizeListener(), this)
-    val storedSize = DimensionService.getInstance().getSize(
-      NEW_JAVADOC_LOCATION_AND_SIZE, project)
+    val storedSize = DimensionService.getInstance().getSize(NEW_JAVADOC_LOCATION_AND_SIZE, project)
     if (storedSize != null && storedSize.width > 50 && storedSize.height > 50) {
       manuallyResized = true
       myPopup.size = storedSize
@@ -229,12 +220,13 @@ class AutoEditPopupUI(
 
     override fun run() {
       manuallyResized = true
-      DimensionService.getInstance().setSize(NEW_JAVADOC_LOCATION_AND_SIZE, myPopup.contentSize, project)
+      DimensionService.getInstance()
+          .setSize(NEW_JAVADOC_LOCATION_AND_SIZE, myPopup.contentSize, project)
     }
   }
 
-  private inner class RestoreDefaultSizeAction : AnAction(CodeInsightBundle.messagePointer("javadoc.restore.size")),
-    ActionToIgnore {
+  private inner class RestoreDefaultSizeAction :
+      AnAction(CodeInsightBundle.messagePointer("javadoc.restore.size")), ActionToIgnore {
 
     override fun update(e: AnActionEvent) {
       e.presentation.isEnabledAndVisible = manuallyResized
@@ -247,4 +239,3 @@ class AutoEditPopupUI(
     }
   }
 }
-

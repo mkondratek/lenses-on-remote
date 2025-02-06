@@ -5,8 +5,8 @@ import com.intellij.util.containers.Stack
 import com.intellij.util.ui.EDT
 
 class AutoEditBrowserHistory<T>(
-  private val snapshot: () -> T,
-  private val restore: (T) -> Unit,
+    private val snapshot: () -> T,
+    private val restore: (T) -> Unit,
 ) : DocumentationHistory {
 
   private val backStack = Stack<T>()
@@ -46,4 +46,3 @@ class AutoEditBrowserHistory<T>(
     forwardStack.clear()
   }
 }
-

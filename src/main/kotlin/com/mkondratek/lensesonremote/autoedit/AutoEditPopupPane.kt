@@ -10,7 +10,7 @@ import javax.swing.JPanel
 internal val FORCED_WIDTH: Key<Int> = Key.create("WidthBasedLayout.width")
 
 class AutoEditPopupPane(
-  private val variableHeightComponent: JComponent,
+    private val variableHeightComponent: JComponent,
 ) : JPanel(BorderLayout()), WidthBasedLayout {
 
   override fun getPreferredWidth(): Int = preferredSize.width
@@ -19,8 +19,7 @@ class AutoEditPopupPane(
     UIUtil.putClientProperty(variableHeightComponent, FORCED_WIDTH, width)
     try {
       return preferredSize.height
-    }
-    finally {
+    } finally {
       UIUtil.putClientProperty(variableHeightComponent, FORCED_WIDTH, null)
     }
   }

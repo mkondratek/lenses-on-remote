@@ -1,9 +1,10 @@
 package com.mkondratek.lensesonremote
 
-import com.intellij.ide.HelpTooltip
 import com.intellij.openapi.editor.event.CaretEvent
 import com.intellij.openapi.editor.event.CaretListener
 import com.intellij.openapi.fileEditor.FileDocumentManager
+import com.mkondratek.lensesonremote.autoedit.AutoEditRequest
+import com.mkondratek.lensesonremote.autoedit.showAutoEditPopup
 
 class MyCaretListener : CaretListener {
   override fun caretPositionChanged(e: CaretEvent) {
@@ -12,6 +13,6 @@ class MyCaretListener : CaretListener {
     val url = FileDocumentManager.getInstance().getFile(e.editor.document)?.url ?: return
     val project = e.editor.project ?: return
 
-
+    showAutoEditPopup(project, listOf(AutoEditRequest(url, lineNumber)), PopupContext(project))
   }
 }
