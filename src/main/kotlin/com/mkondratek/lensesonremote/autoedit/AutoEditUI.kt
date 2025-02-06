@@ -31,7 +31,6 @@ import com.intellij.ui.PopupHandler
 import com.intellij.util.ui.EDT
 import com.intellij.util.ui.JBUI
 import com.intellij.util.ui.SwingTextTrimmer
-import com.intellij.util.ui.UIUtil
 import com.intellij.util.ui.accessibility.ScreenReader
 import java.awt.Color
 import java.awt.Rectangle
@@ -217,12 +216,12 @@ class AutoEditUI(
         // emission happens
         clearImages()
         fetchingMessage()
-        applyUIState(UIState.Reset)
+        applyUIState()
       }
       AutoEditPageContent.Empty -> {
         clearImages()
         noDocumentationMessage()
-        applyUIState(UIState.Reset)
+        applyUIState()
       }
       is AutoEditPageContent.Content -> {
         clearImages()
@@ -245,7 +244,7 @@ class AutoEditUI(
     val uiState = pageContent.uiState
     if (uiState != null) {
       yield()
-      applyUIState(uiState)
+      applyUIState()
     }
   }
 
@@ -305,17 +304,10 @@ class AutoEditUI(
     return true
   }
 
-  private fun applyUIState(uiState: UIState) {
-    when (uiState) {
-      UIState.Reset -> {
-        editorPane.scrollRectToVisible(Rectangle(0, 0))
-        if (ScreenReader.isActive()) {
-          editorPane.caretPosition = 0
-        }
-      }
-      is UIState.ScrollToAnchor -> {
-        UIUtil.scrollToReference(editorPane, uiState.anchor)
-      }
+  private fun applyUIState() {
+    editorPane.scrollRectToVisible(Rectangle(0, 0))
+    if (ScreenReader.isActive()) {
+      editorPane.caretPosition = 0
     }
   }
 

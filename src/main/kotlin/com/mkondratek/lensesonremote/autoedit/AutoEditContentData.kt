@@ -2,11 +2,8 @@ package com.mkondratek.lensesonremote.autoedit
 
 import com.intellij.lang.documentation.DocumentationImageResolver
 import com.intellij.platform.backend.documentation.DocumentationContent
-import com.intellij.psi.PsiElement
 
 data class AutoEditContentData(
     val html: String,
-    val imageResolver: DocumentationImageResolver? = null,
-    val definitionDetails: String? = null,
-    val targetElement: PsiElement? = null
+    val imageResolver: DocumentationImageResolver? = null
 ) : DocumentationContent

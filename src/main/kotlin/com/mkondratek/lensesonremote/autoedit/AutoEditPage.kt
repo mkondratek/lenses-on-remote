@@ -43,24 +43,19 @@ class AutoEditPage(val requests: List<AutoEditRequest>, val project: Project) {
       myContentFlow.value = AutoEditPageContent.Empty
       return
     }
-    val uiState = data.anchor?.let(UIState::ScrollToAnchor) ?: UIState.Reset
     expandableDefinition = createExpandableDefinition(data.content)
     myContentFlow.value =
         prepareContent(
-            data.content.copy(html = expandableDefinition?.getDecorated() ?: data.content.html),
-            uiState)
+            data.content.copy(html = expandableDefinition?.getDecorated() ?: data.content.html))
     update(data.updates)
   }
 
   private suspend fun update(updates: Flow<AutoEditContentData>) {
-    updates.flowOn(Dispatchers.Default).collectLatest {
-      myContentFlow.value = prepareContent(it, uiState = null)
-    }
+    updates.flowOn(Dispatchers.Default).collectLatest { myContentFlow.value = prepareContent(it) }
   }
 
   private suspend fun prepareContent(
       content: AutoEditContentData,
-      uiState: UIState?
   ): AutoEditPageContent.Content {
     var downloadSourcesLink: String? = null
     if (content.targetElement != null) {
@@ -72,7 +67,7 @@ class AutoEditPage(val requests: List<AutoEditRequest>, val project: Project) {
         }
       }
     }
-    return AutoEditPageContent.Content(content, uiState, downloadSourcesLink)
+    return AutoEditPageContent.Content(content, downloadSourcesLink)
   }
 
   private fun PsiElement.getTargetFile(): VirtualFile? =
@@ -112,9 +107,6 @@ sealed class AutoEditPageContent {
 
   object Empty : AutoEditPageContent()
 
-  data class Content(
-      val content: AutoEditContentData,
-      val uiState: UIState?,
-      val downloadSourcesLink: String?
-  ) : AutoEditPageContent()
+  data class Content(val content: AutoEditContentData, val downloadSourcesLink: String?) :
+      AutoEditPageContent()
 }
