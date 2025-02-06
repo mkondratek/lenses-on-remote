@@ -1,7 +1,5 @@
 package com.mkondratek.lensesonremote.autoedit
 
-// import com.intellij.platform.backend.documentation.asFlow
-// import com.intellij.platform.backend.documentation.imageResolver
 import com.intellij.platform.backend.documentation.BlockingDocumentationContentFlow
 import com.intellij.platform.backend.documentation.DocumentationContent
 import com.intellij.platform.backend.documentation.DocumentationResult.Documentation
@@ -26,7 +24,6 @@ internal constructor(
 
   override fun images(images: Map<String, Image>): Documentation {
     throw NotImplementedError()
-    //    return content(content.copy(imageResolver = imageResolver(images)))
   }
 
   override fun content(content: DocumentationContent): Documentation {
@@ -51,6 +48,5 @@ internal constructor(
 
   override fun blockingUpdates(updates: BlockingDocumentationContentFlow): Documentation {
     throw NotImplementedError()
-    //    return updates(updates.asFlow())
   }
 }

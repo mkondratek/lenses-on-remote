@@ -36,7 +36,7 @@ suspend fun showAutoEditPopup(
     throw ce
   }
   val popupUI = AutoEditPopupUI(project, AutoEditUI(project, browser))
-  val popup = createDocumentationPopup(project, popupUI, popupContext)
+  val popup = createAutoEditPopup(project, popupUI, popupContext)
   try {
     popupContext.setUpPopup(popup, popupUI)
   } catch (ce: CancellationException) {
@@ -51,7 +51,7 @@ suspend fun showAutoEditPopup(
   return popup
 }
 
-private fun createDocumentationPopup(
+private fun createAutoEditPopup(
     project: Project,
     popupUI: AutoEditPopupUI,
     popupContext: PopupContext,
