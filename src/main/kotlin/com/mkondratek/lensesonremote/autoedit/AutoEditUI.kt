@@ -1,13 +1,10 @@
 package com.mkondratek.lensesonremote.autoedit
 
 import com.intellij.codeInsight.CodeInsightBundle
-import com.intellij.codeInsight.documentation.DocumentationHintEditorPane
 import com.intellij.codeInsight.documentation.DocumentationHtmlUtil
 import com.intellij.codeInsight.documentation.DocumentationManager.decorate
-import com.intellij.codeInsight.documentation.DocumentationScrollPane
 import com.intellij.codeInsight.documentation.getDocumentationFontSize
 import com.intellij.codeInsight.documentation.setDocumentationFontSize
-import com.intellij.codeInsight.hint.DefinitionSwitcher
 import com.intellij.codeInsight.hint.LineTooltipRenderer
 import com.intellij.ide.DataManager
 import com.intellij.lang.documentation.DocumentationImageResolver
@@ -28,6 +25,10 @@ import com.intellij.platform.ide.documentation.DOCUMENTATION_BROWSER
 import com.intellij.platform.util.coroutines.flow.collectLatestUndispatched
 import com.intellij.ui.FontSizeModel
 import com.intellij.ui.PopupHandler
+import com.intellij.ui.components.JBHtmlPane
+import com.intellij.ui.components.JBHtmlPaneConfiguration
+import com.intellij.ui.components.JBHtmlPaneStyleConfiguration
+import com.intellij.ui.components.JBScrollPane
 import com.intellij.util.ui.EDT
 import com.intellij.util.ui.JBUI
 import com.intellij.util.ui.SwingTextTrimmer
@@ -36,7 +37,6 @@ import java.awt.Color
 import java.awt.Rectangle
 import java.awt.event.MouseWheelEvent
 import java.awt.event.MouseWheelListener
-import javax.swing.JComponent
 import javax.swing.JLabel
 import javax.swing.JScrollPane
 import kotlin.math.abs
@@ -64,10 +64,9 @@ class AutoEditUI(
 ) : DataProvider, Disposable {
 
   val scrollPane: JScrollPane
-  val editorPane: DocumentationHintEditorPane
+  val editorPane: JBHtmlPane
   val locationLabel: JLabel
   val fontSize: DocumentationFontSizeModel = DocumentationFontSizeModel()
-  val switcherToolbarComponent: JComponent
 
   private var imageResolver: DocumentationImageResolver? = null
   private val cs = CoroutineScope(Dispatchers.EDT)
@@ -77,27 +76,18 @@ class AutoEditUI(
   private val myContentSizeUpdates =
       MutableSharedFlow<PopupUpdateEvent>(replay = 1, onBufferOverflow = BufferOverflow.DROP_OLDEST)
   val contentSizeUpdates: SharedFlow<PopupUpdateEvent> = myContentSizeUpdates.asSharedFlow()
-  private val switcher: DefinitionSwitcher<AutoEditRequest>
   private var contentKind: ContentKind? = null
 
   init {
-    scrollPane = DocumentationScrollPane()
+    scrollPane = JBScrollPane()
+
+    val configuration= JBHtmlPaneConfiguration.builder()
+      .customStyleSheet("h1 { margin: 0px; padding: 0px; }")
+      .build()
     editorPane =
-        DocumentationHintEditorPane(project, DocumentationScrollPane.keyboardActions(scrollPane)) {
-          imageResolver?.resolveImage(it)
-        }
+        JBHtmlPane(JBHtmlPaneStyleConfiguration(), configuration)
     Disposer.register(this, editorPane)
     scrollPane.addMouseWheelListener(FontSizeMouseWheelListener(fontSize))
-    switcher = createSwitcher()
-    switcherToolbarComponent =
-        switcher.createToolbar().component.apply {
-          border =
-              JBUI.Borders.empty(
-                  DocumentationHtmlUtil.spaceBeforeParagraph,
-                  DocumentationHtmlUtil.contentOuterPadding - 4,
-                  0,
-                  DocumentationHtmlUtil.contentOuterPadding - 4)
-        }
     val textTrimmer = SwingTextTrimmer.createCenterTrimmer(0.8f)
     locationLabel =
         object : JLabel() {
@@ -113,14 +103,13 @@ class AutoEditUI(
                       DocumentationHtmlUtil.contentOuterPadding)
               putClientProperty(SwingTextTrimmer.KEY, textTrimmer)
             }
-    scrollPane.setViewportView(editorPane, locationLabel)
+    scrollPane.setViewportView(editorPane)
     trackDocumentationBackgroundChange(this) {
       // Force update of the background color for scroll pane
       @Suppress("UseJBColor") val color = Color(it.rgb)
       editorPane.parent.background = color
       scrollPane.viewport.background = color
       locationLabel.background = color
-      switcherToolbarComponent.background = color
     }
 
     browser.ui = this
@@ -141,7 +130,7 @@ class AutoEditUI(
     cs.launch(
         CoroutineName("DocumentationUI font size update"), start = CoroutineStart.UNDISPATCHED) {
           fontSize.updates.collect {
-            editorPane.applyFontProps(it)
+//            editorPane.applyFontProps(it)
             myContentSizeUpdates.emit(PopupUpdateEvent.FontChanged)
           }
         }
@@ -182,26 +171,7 @@ class AutoEditUI(
 
   private suspend fun handlePage(page: AutoEditPage) {
     val presentation = page.request.presentation
-    val i = switcher.elements.indexOf(page.request)
-    if (i < 0) {
-      switcher.elements = page.requests.toTypedArray()
-      switcher.index = 0
-    } else {
-      switcher.index = i
-    }
-    updateSwitcherVisibility()
     page.contentFlow.collectLatest { handleContent(presentation, it) }
-  }
-
-  fun updateSwitcherVisibility() {
-    val visible = switcher.elements.count() > 1
-    switcherToolbarComponent.isVisible = visible
-    editorPane.border =
-        JBUI.Borders.emptyTop(
-            if (visible) 0
-            else
-                DocumentationHtmlUtil.contentOuterPadding -
-                    DocumentationHtmlUtil.spaceBeforeParagraph)
   }
 
   private suspend fun handleContent(
@@ -306,11 +276,6 @@ class AutoEditUI(
     if (ScreenReader.isActive()) {
       editorPane.caretPosition = 0
     }
-  }
-
-  private fun createSwitcher(): DefinitionSwitcher<AutoEditRequest> {
-    val requests = browser.page.requests
-    return DefinitionSwitcher(requests.toTypedArray(), scrollPane) { browser.resetBrowser(it) }
   }
 
   private enum class ContentKind {

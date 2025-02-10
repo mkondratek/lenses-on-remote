@@ -48,8 +48,8 @@ class AutoEditManager(private val project: Project, private val cs: CoroutineSco
     val requests =
         listOf(
             AutoEditRequest(
-                EmptyDocumentationTarget.createPointer(),
-                EmptyDocumentationTarget.computePresentation()))
+              EmptyDocumentationTarget.computePresentation()
+            ))
 
     val popupContext = DefaultPopupContext(project, editor)
     showAutoEdit(requests, popupContext, popupDependencies)

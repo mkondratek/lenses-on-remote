@@ -54,7 +54,7 @@ class AutoEditPage(val requests: List<AutoEditRequest>, val project: Project) {
                         "  <meta name=\"viewport\" content=\"width=device-width, initial-scale=1.0\">\n" +
                         "</head>\n" +
                         "<body>\n" +
-                        "<p>Hello from Auto Edit!</p>\n" +
+                        "<p>Hello from Auto Edit! Hello from Auto Edit! Hello from Auto Edit! Hello from Auto Edit! Hello from Auto Edit! Hello from Auto Edit!</p>\n" +
                         "<img src=\"data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAUAAAAFCAYAAACNbyblAAAAHElEQVQI12P4//8/w38GIAXDIBKE0DHxgljNBAAO9TXL0Y4OHwAAAABJRU5ErkJggg==\" alt=\"Red dot\" />\n" +
                         "</body>\n" +
                         "</html>"))
