@@ -1,6 +1,5 @@
 package com.mkondratek.lensesonremote.autoedit
 
-import com.intellij.lang.documentation.ide.impl.DocumentationPopupFocusService
 import com.intellij.model.Pointer
 import com.intellij.openapi.Disposable
 import com.intellij.openapi.actionSystem.CommonDataKeys
@@ -46,14 +45,6 @@ class AutoEditManager(private val project: Project, private val cs: CoroutineSco
     EDT.assertIsEdt()
 
     val editor = dataContext.getData(CommonDataKeys.EDITOR)
-    val currentPopup = getPopup()
-    if (currentPopup != null) {
-      // focused popup would eat the shortcut itself
-      // => at this point there is an unfocused documentation popup near lookup or search component
-      DocumentationPopupFocusService.getInstance(project).focusExistingPopup(currentPopup)
-      return
-    }
-
     val requests =
         listOf(
             AutoEditRequest(

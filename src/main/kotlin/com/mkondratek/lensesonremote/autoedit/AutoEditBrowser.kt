@@ -22,8 +22,6 @@ import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
 
-typealias UISnapshot = () -> Unit
-
 class AutoEditBrowser
 private constructor(
     private val project: Project,

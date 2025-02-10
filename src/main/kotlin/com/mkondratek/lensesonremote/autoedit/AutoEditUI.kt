@@ -237,15 +237,12 @@ class AutoEditUI(
     val content = pageContent.content
     imageResolver = content.imageResolver
     //    val linkChunk = linkChunk(presentation.presentableText, pageContent.links)
-    val decorated = decorate(content.html, null, null, pageContent.downloadSourcesLink)
+    val decorated = decorate(content.html, null, null, null)
     if (!updateContent(decorated, presentation, ContentKind.DocumentationPage)) {
       return
     }
-    val uiState = pageContent.uiState
-    if (uiState != null) {
-      yield()
-      applyUIState()
-    }
+    yield()
+    applyUIState()
   }
 
   private fun fetchingMessage() {

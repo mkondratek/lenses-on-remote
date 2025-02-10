@@ -24,6 +24,7 @@ import com.intellij.openapi.project.Project
 import com.intellij.openapi.ui.popup.JBPopup
 import com.intellij.openapi.util.DimensionService
 import com.intellij.openapi.util.Disposer
+import com.intellij.ui.components.JBHtmlPaneConfiguration
 import com.intellij.ui.popup.AbstractPopup
 import com.intellij.ui.scale.JBUIScale
 import com.intellij.util.ui.EDT
@@ -124,7 +125,14 @@ class AutoEditPopupUI(
           border = JBUI.Borders.empty(0, 0, contentOuterPadding - 3, settingsButtonPadding - 5)
         }
     ui.trackDocumentationBackgroundChange(this) { corner.background = it }
+    val configuration =
+        JBHtmlPaneConfiguration.builder()
+            .customStyleSheet("h1 { margin: 0px; padding: 0px; }")
+            .build()
     component =
+        //        JBHtmlPane(JBHtmlPaneStyleConfiguration(), configuration).also { pane ->
+        //          pane.add(scrollPaneWithCorner(this, ui.scrollPane, corner), BorderLayout.CENTER)
+        //        }
         AutoEditPopupPane(ui.scrollPane).also { pane ->
           pane.add(scrollPaneWithCorner(this, ui.scrollPane, corner), BorderLayout.CENTER)
           pane.add(ui.switcherToolbarComponent, BorderLayout.NORTH)
