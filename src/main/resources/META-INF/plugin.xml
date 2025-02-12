@@ -4,22 +4,11 @@
     <name>Lenses On Remote</name>
     <vendor>mkondratek</vendor>
 
+    <depends>com.intellij.modules.lang</depends>
+
     <extensions defaultExtensionNs="com.intellij">
         <postStartupActivity
                 implementation="com.mkondratek.lensesonremote.PostStartupActivity"/>
-
-        <codeInsight.codeVisionProvider
-                id="EditAcceptCodeVisionProvider"
-                implementation="com.mkondratek.lensesonremote.providers.EditAcceptCodeVisionProvider"/>
-        <codeInsight.codeVisionProvider
-                id="EditDiffCodeVisionProvider"
-                implementation="com.mkondratek.lensesonremote.providers.EditDiffCodeVisionProvider"/>
-        <codeInsight.codeVisionProvider
-                id="EditUndoCodeVisionProvider"
-                implementation="com.mkondratek.lensesonremote.providers.EditUndoCodeVisionProvider"/>
-        <codeInsight.codeVisionProvider
-                id="EditRetryCodeVisionProvider"
-                implementation="com.mkondratek.lensesonremote.providers.EditRetryCodeVisionProvider"/>
     </extensions>
 
 </idea-plugin>
