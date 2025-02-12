@@ -1,13 +1,11 @@
 package com.mkondratek.lensesonremote.autoedit
 
-import com.intellij.codeInsight.CodeInsightBundle
 import com.intellij.codeInsight.documentation.DocumentationHtmlUtil
 import com.intellij.codeInsight.documentation.DocumentationManager.decorate
 import com.intellij.codeInsight.documentation.getDocumentationFontSize
 import com.intellij.codeInsight.documentation.setDocumentationFontSize
 import com.intellij.codeInsight.hint.LineTooltipRenderer
 import com.intellij.ide.DataManager
-import com.intellij.lang.documentation.DocumentationImageResolver
 import com.intellij.lang.documentation.DocumentationMarkup.CLASS_CONTENT
 import com.intellij.lang.documentation.ide.ui.PopupUpdateEvent
 import com.intellij.lang.documentation.ide.ui.PopupUpdateEvent.ContentUpdateKind
@@ -68,7 +66,6 @@ class AutoEditUI(
   val locationLabel: JLabel
   val fontSize: DocumentationFontSizeModel = DocumentationFontSizeModel()
 
-  private var imageResolver: DocumentationImageResolver? = null
   private val cs = CoroutineScope(Dispatchers.EDT)
   private val myContentUpdates =
       MutableSharedFlow<ContentUpdateKind>(
@@ -81,11 +78,11 @@ class AutoEditUI(
   init {
     scrollPane = JBScrollPane()
 
-    val configuration= JBHtmlPaneConfiguration.builder()
-      .customStyleSheet("h1 { margin: 0px; padding: 0px; }")
-      .build()
-    editorPane =
-        JBHtmlPane(JBHtmlPaneStyleConfiguration(), configuration)
+    val configuration =
+        JBHtmlPaneConfiguration.builder()
+            .customStyleSheet("h1 { margin: 0px; padding: 0px; }")
+            .build()
+    editorPane = JBHtmlPane(JBHtmlPaneStyleConfiguration(), configuration)
     Disposer.register(this, editorPane)
     scrollPane.addMouseWheelListener(FontSizeMouseWheelListener(fontSize))
     val textTrimmer = SwingTextTrimmer.createCenterTrimmer(0.8f)
@@ -112,7 +109,6 @@ class AutoEditUI(
       locationLabel.background = color
     }
 
-    browser.ui = this
     Disposer.register(this, browser)
 
     val contextMenu =
@@ -127,25 +123,10 @@ class AutoEditUI(
         CoroutineName("DocumentationUI content update"), start = CoroutineStart.UNDISPATCHED) {
           browser.pageFlow.collectLatestUndispatched { page -> handlePage(page) }
         }
-    cs.launch(
-        CoroutineName("DocumentationUI font size update"), start = CoroutineStart.UNDISPATCHED) {
-          fontSize.updates.collect {
-//            editorPane.applyFontProps(it)
-            myContentSizeUpdates.emit(PopupUpdateEvent.FontChanged)
-          }
-        }
-    cs.launch(
-        CoroutineName("DocumentationUI content size update emission"),
-        start = CoroutineStart.UNDISPATCHED) {
-          myContentUpdates.collect {
-            myContentSizeUpdates.emit(PopupUpdateEvent.ContentChanged(it))
-          }
-        }
   }
 
   override fun dispose() {
     cs.cancel("DocumentationUI disposal")
-    clearImages()
   }
 
   override fun getData(dataId: String): Any? {
@@ -165,13 +146,10 @@ class AutoEditUI(
     Disposer.register(disposable) { job.cancel() }
   }
 
-  private fun clearImages() {
-    imageResolver = null
-  }
-
   private suspend fun handlePage(page: AutoEditPage) {
-    val presentation = page.request.presentation
-    page.contentFlow.collectLatest { handleContent(presentation, it) }
+    page.contentFlow.collectLatest {
+      handleContent(TargetPresentation.builder("").presentation(), it)
+    }
   }
 
   private suspend fun handleContent(
@@ -184,17 +162,14 @@ class AutoEditUI(
         // documentation to load
         delay(DEFAULT_UI_RESPONSE_TIMEOUT) // this call will be immediately cancelled once a new
         // emission happens
-        clearImages()
         fetchingMessage()
         applyUIState()
       }
       AutoEditPageContent.Empty -> {
-        clearImages()
         noDocumentationMessage()
         applyUIState()
       }
       is AutoEditPageContent.Content -> {
-        clearImages()
         handleContent(presentation, pageContent)
       }
     }
@@ -205,8 +180,6 @@ class AutoEditUI(
       pageContent: AutoEditPageContent.Content
   ) {
     val content = pageContent.content
-    imageResolver = content.imageResolver
-    //    val linkChunk = linkChunk(presentation.presentableText, pageContent.links)
     val decorated = decorate(content.html, null, null, null)
     if (!updateContent(decorated, presentation, ContentKind.DocumentationPage)) {
       return
@@ -216,15 +189,11 @@ class AutoEditUI(
   }
 
   private fun fetchingMessage() {
-    updateContent(
-        message(CodeInsightBundle.message("javadoc.fetching.progress")),
-        null,
-        ContentKind.InfoMessage)
+    updateContent(message("Fetching auto edit..."), null, ContentKind.InfoMessage)
   }
 
   private fun noDocumentationMessage() {
-    updateContent(
-        message(CodeInsightBundle.message("no.documentation.found")), null, ContentKind.InfoMessage)
+    updateContent(message("No auto edit."), null, ContentKind.InfoMessage)
   }
 
   private fun message(message: @Nls String): @Nls String {

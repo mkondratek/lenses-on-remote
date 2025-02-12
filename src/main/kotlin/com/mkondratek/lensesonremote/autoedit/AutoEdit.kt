@@ -23,10 +23,9 @@ internal const val DEFAULT_UI_RESPONSE_TIMEOUT: Long = 300
 
 suspend fun showAutoEditPopup(
     project: Project,
-    requests: List<AutoEditRequest>,
     popupContext: PopupContext,
 ): AbstractPopup {
-  val browser = AutoEditBrowser.createBrowser(project, requests)
+  val browser = AutoEditBrowser.createBrowser(project)
   try {
     // to avoid flickering: show popup after there is anything to show
     // OR show popup after the timeout

@@ -9,7 +9,6 @@ import com.intellij.openapi.project.Project
 import com.intellij.openapi.ui.popup.JBPopup
 import com.intellij.openapi.util.DimensionService
 import com.intellij.openapi.util.Disposer
-import com.intellij.ui.components.JBHtmlPaneConfiguration
 import com.intellij.ui.popup.AbstractPopup
 import com.intellij.util.ui.EDT
 import java.util.function.Supplier
@@ -55,17 +54,7 @@ class AutoEditPopupUI(
 
   init {
     browser.closeTrigger { coroutineScope.launch(Dispatchers.EDT) { myPopup.cancel() } }
-
-    val configuration =
-        JBHtmlPaneConfiguration.builder()
-            .customStyleSheet("h1 { margin: 0px; padding: 0px; }")
-            .build()
     component = ui.scrollPane
-//                JBHtmlPane(JBHtmlPaneStyleConfiguration(), configuration).also { pane ->
-//        JPanel(BorderLayout()).also { pane ->
-//          pane.add(ui.scrollPane)
-//          }
-
     coroutineScope.launch { popupUpdateFlow.emitAll(ui.contentSizeUpdates) }
   }
 

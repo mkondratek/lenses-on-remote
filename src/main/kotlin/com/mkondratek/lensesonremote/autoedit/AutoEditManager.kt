@@ -1,6 +1,5 @@
 package com.mkondratek.lensesonremote.autoedit
 
-import com.intellij.model.Pointer
 import com.intellij.openapi.Disposable
 import com.intellij.openapi.actionSystem.CommonDataKeys
 import com.intellij.openapi.actionSystem.DataContext
@@ -11,9 +10,6 @@ import com.intellij.openapi.components.Service
 import com.intellij.openapi.components.service
 import com.intellij.openapi.project.Project
 import com.intellij.openapi.util.Disposer
-import com.intellij.platform.backend.documentation.DocumentationResult
-import com.intellij.platform.backend.documentation.DocumentationTarget
-import com.intellij.platform.backend.presentation.TargetPresentation
 import com.intellij.platform.util.coroutines.childScope
 import com.intellij.ui.popup.AbstractPopup
 import com.intellij.util.ui.EDT
@@ -45,14 +41,8 @@ class AutoEditManager(private val project: Project, private val cs: CoroutineSco
     EDT.assertIsEdt()
 
     val editor = dataContext.getData(CommonDataKeys.EDITOR)
-    val requests =
-        listOf(
-            AutoEditRequest(
-              EmptyDocumentationTarget.computePresentation()
-            ))
-
     val popupContext = DefaultPopupContext(project, editor)
-    showAutoEdit(requests, popupContext, popupDependencies)
+    showAutoEdit(popupContext, popupDependencies)
   }
 
   private var popup: WeakReference<AbstractPopup>? = null
@@ -83,11 +73,7 @@ class AutoEditManager(private val project: Project, private val cs: CoroutineSco
     popupDependencies?.let { Disposer.register(popup, it) }
   }
 
-  private fun showAutoEdit(
-      requests: List<AutoEditRequest>,
-      popupContext: PopupContext,
-      popupDependencies: Disposable? = null
-  ) {
+  private fun showAutoEdit(popupContext: PopupContext, popupDependencies: Disposable? = null) {
     if (getPopup() != null) {
       return
     }
@@ -95,20 +81,8 @@ class AutoEditManager(private val project: Project, private val cs: CoroutineSco
     popupScope.launch(
         context = Dispatchers.EDT + ModalityState.current().asContextElement(),
         start = CoroutineStart.UNDISPATCHED) {
-          val popup = showAutoEditPopup(project, requests, popupContext)
+          val popup = showAutoEditPopup(project, popupContext)
           setPopup(popup, popupDependencies)
         }
   }
-}
-
-object EmptyDocumentationTarget : DocumentationTarget, Pointer<EmptyDocumentationTarget> {
-
-  override fun createPointer(): Pointer<out EmptyDocumentationTarget> = this
-
-  override fun dereference(): EmptyDocumentationTarget = this
-
-  override fun computePresentation(): TargetPresentation =
-      TargetPresentation.builder("").presentation()
-
-  override fun computeDocumentation(): DocumentationResult? = null
 }
